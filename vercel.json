@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "src": "Gene_INFO.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "Gene_INFO.py"
+    }
+  ]
+}
