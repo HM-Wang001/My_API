@@ -1,10 +1,10 @@
 {
-  "functions": {
-    "api/search.py": {
-      "runtime": "python3.11",
-      "maxDuration": 30
+  "builds": [
+    {
+      "src": "api/Paper_Search_API.py",
+      "use": "@vercel/python"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/(.*)",
