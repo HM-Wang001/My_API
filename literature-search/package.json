@@ -1,0 +1,7 @@
+{
+  "name": "paper-search-api",
+  "version": "1.0.0",
+  "dependencies": {
+    "@vercel/python": "^4.0.0"
+  }
+}
