@@ -847,3 +847,5 @@ def handler(request: Dict[str, Any]) -> Dict[str, Any]:
             'headers': headers,
             'body': json.dumps({'success': False, 'error': str(e)})
         }
+print("=== Paper_Search_API.py loaded ===")
+print("handler defined:", 'handler' in dir())
