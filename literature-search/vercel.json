@@ -1,13 +1,14 @@
 {
-  "functions": {
-    "api/Paper_Search_API.py": {
-      "runtime": "python3.11"
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/api/Paper_Search_API.py"
+      "dest": "/api/index.py"
     }
   ]
 }
