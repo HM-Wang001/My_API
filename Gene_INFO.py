@@ -14,28 +14,72 @@ cache = {}
 
 def get_gene_id_from_symbol(symbol):
     """
-    通过基因符号搜索Gene ID
+    通过官方基因符号搜索 Gene ID
     """
     try:
         search_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
         search_params = {
             "db": "gene",
-            "term": f"{symbol}[Gene Name] AND human[Organism]",
+            "term": f"{symbol}[sym] AND human[Organism]",
             "retmode": "json",
-            "retmax": "1"
+            "retmax": "5"  # 多取几条，后续手动筛选
         }
 
         r = requests.get(search_url, params=search_params, timeout=10)
         r.raise_for_status()
         data = r.json()
 
-        if data["esearchresult"]["idlist"]:
-            return data["esearchresult"]["idlist"][0]
-        return None
+        id_list = data["esearchresult"]["idlist"]
+        if not id_list:
+            return None
+
+        # 如果只有一个结果，直接返回
+        if len(id_list) == 1:
+            return id_list[0]
+
+        # 多个结果时，用 efetch 验证哪个是官方符号
+        return verify_official_symbol(symbol, id_list)
 
     except Exception as e:
         print(f"搜索基因符号 {symbol} 出错: {e}")
         return None
+
+
+def verify_official_symbol(symbol, id_list):
+    """
+    从多个候选 Gene ID 中找到官方符号匹配的那个
+    """
+    try:
+        fetch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
+        fetch_params = {
+            "db": "gene",
+            "id": ",".join(id_list),
+            "retmode": "xml"
+        }
+
+        r = requests.get(fetch_url, params=fetch_params, timeout=10)
+        r.raise_for_status()
+
+        root = ET.fromstring(r.text)
+
+        for gene in root.findall(".//Entrezgene"):
+            # 获取 Gene ID
+            gene_id_elem = gene.find(".//Gene-track_geneid")
+            gene_id = gene_id_elem.text if gene_id_elem is not None else None
+
+            # 获取官方符号（Gene-ref_locus）
+            locus_elem = gene.find(".//Gene-ref_locus")
+            official_symbol = locus_elem.text if locus_elem is not None else None
+
+            if official_symbol and official_symbol.upper() == symbol.upper():
+                return gene_id
+
+        # 如果找不到精确匹配，返回第一个结果
+        return id_list[0] if id_list else None
+
+    except Exception as e:
+        print(f"验证官方符号 {symbol} 出错: {e}")
+        return id_list[0] if id_list else None
 
 
 def get_gene_id_from_nm(nm_id):
