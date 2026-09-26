@@ -1,19 +1,16 @@
-
 import json
 import time
 import requests
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import FastAPI, HTTPException, Query
 
 # 导入你现有的登录模块
 from zepp登录接口 import zepp_login
 
 app = FastAPI(title="Zepp 步数 API")
 
-class StepRequest(BaseModel):
-    account: str = Field(..., description="Zepp 账号")
-    password: str = Field(..., description="密码")
-    steps: int = Field(..., ge=1000, le=98880, description="目标步数")
+# 自定义密钥，改成你自己的随机字符串
+API_KEY = "0120"
+
 
 def submit_steps(user_id, app_token, steps):
     timestamp = int(time.time())
@@ -69,17 +66,28 @@ def submit_steps(user_id, app_token, steps):
     except requests.exceptions.RequestException as e:
         return False, f"请求异常: {e}"
 
-@app.post("/api/update-steps")
-async def update_steps(req: StepRequest):
-    login_result = zepp_login(req.account, req.password)
+
+@app.get("/api/update-steps")
+async def update_steps(
+    account: str = Query(..., description="Zepp 账号"),
+    password: str = Query(..., description="密码"),
+    steps: int = Query(..., ge=1000, le=98880, description="目标步数"),
+    key: str = Query(..., description="API 密钥")
+):
+    # 密钥校验
+    if key != API_KEY:
+        raise HTTPException(status_code=403, detail="密钥错误，无权限访问")
+
+    login_result = zepp_login(account, password)
     if not login_result or not login_result.app_token:
         raise HTTPException(status_code=401, detail="登录失败")
 
-    ok, msg = submit_steps(login_result.user_id, login_result.app_token, req.steps)
+    ok, msg = submit_steps(login_result.user_id, login_result.app_token, steps)
     if ok:
         return {"success": True, "message": msg}
     else:
         raise HTTPException(status_code=500, detail=msg)
+
 
 @app.get("/")
 async def root():
