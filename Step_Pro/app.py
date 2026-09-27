@@ -2,8 +2,7 @@ import os
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
-app.config['JSON_AS_ASCII'] = False 
-
+app.json.ensure_ascii = False
 # 从环境变量读取配置（你之前用的 CONFIG JSON 格式）
 import json
 
